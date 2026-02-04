@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Trabajador - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+        <div>
+            <h1 style="margin: 0 0 0.5rem 0;">✏️ Editar Trabajador</h1>
+            <p style="color: #666; margin: 0;">Actualiza la información del trabajador</p>
+        </div>
+        <a href="/trabajadores" class="btn btn-outline-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+            <span>←</span> Volver
+        </a>
+    </div>
+
+    <!-- Contenedor de carga -->
+    <div id="contenedor_carga" class="card">
+        <div class="card-body" style="text-align: center; padding: 4rem 2rem;">
+            <p style="color: #7f8c8d; font-size: 1.1rem;">
+                <span style="font-size: 2rem;">⏳</span>
+                <br>
+                Cargando información...
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div id="formulario_container" style="display: none; max-width: 900px;">
+        <div class="card">
+            <div class="card-header">
+                <h4 style="margin: 0;">📋 Datos del Trabajador</h4>
+            </div>
+            <div class="card-body">
+                <form id="formulario_editar">
+                    <!-- Nombre y Apellido -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nombre" class="required">Nombre</label>
+                                <input 
+                                    type="text" 
+                                    id="nombre" 
+                                    name="nombre"  
+                                    class="form-control"
+                                    required
+                                >
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="apellido" class="required">Apellido</label>
+                                <input 
+                                    type="text" 
+                                    id="apellido" 
+                                    name="apellido"  
+                                    class="form-control"
+                                    required
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cédula -->
+                    <div class="form-group">
+                        <label for="cedula">Cédula (No editable)</label>
+                        <input 
+                            type="text" 
+                            id="cedula" 
+                            class="form-control"
+                            disabled
+                        >
+                    </div>
+
+                    <!-- Email y Teléfono -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email"  
+                                    class="form-control"
+                                >
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="telefono">Teléfono</label>
+                                <input 
+                                    type="tel" 
+                                    id="telefono" 
+                                    name="telefono"  
+                                    class="form-control"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cargo y Salario -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="cargo" class="required">Cargo</label>
+                                <select id="cargo" name="cargo" class="form-control" required>
+                                    <option value="">-- Seleccione un cargo --</option>
+                                    <option value="operaria">Operaria</option>
+                                    <option value="aprendiz">Aprendiz</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="gerente">Gerente</option>
+                                    <option value="administrador">Administrador</option>
+                                    <option value="otros">Otros</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="salario" class="required">Salario Diario (COP)</label>
+                                <input 
+                                    type="number" 
+                                    id="salario" 
+                                    name="salario"  
+                                    class="form-control"
+                                    required
+                                    step="0.01"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reference ID -->
+                    <div class="form-group">
+                        <label for="reference_id">ID de Referencia</label>
+                        <input 
+                            type="text" 
+                            id="reference_id" 
+                            name="reference_id"  
+                            class="form-control"
+                        >
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="form-group">
+                        <label for="activo" class="required">Estado</label>
+                        <select id="activo" name="activo" class="form-control" required>
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones -->
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-success">
+                            💾 Guardar Cambios
+                        </button>
+                        <a href="/trabajadores" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            ❌ Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const trabajadorId = urlParams.get('id');
+
+    async function cargarTrabajador() {
+        if (!trabajadorId) {
+            alert('Error: ID de trabajador no proporcionado');
+            window.location.href = '/trabajadores';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/trabajadores/${trabajadorId}`);
+            const resultado = await response.json();
+
+            if (resultado.success && resultado.data) {
+                const trabajador = resultado.data;
+                
+                // Llenar el formulario con los datos
+                document.getElementById('nombre').value = trabajador.nombre || '';
+                document.getElementById('apellido').value = trabajador.apellido || '';
+                document.getElementById('cedula').value = trabajador.cedula || '';
+                document.getElementById('email').value = trabajador.email || '';
+                document.getElementById('telefono').value = trabajador.telefono || '';
+                document.getElementById('cargo').value = trabajador.cargo || '';
+                document.getElementById('salario').value = trabajador.salario || '';
+                document.getElementById('reference_id').value = trabajador.reference_id || '';
+                document.getElementById('activo').value = trabajador.activo ? 'true' : 'false';
+
+                // Mostrar formulario
+                document.getElementById('contenedor_carga').style.display = 'none';
+                document.getElementById('formulario_container').style.display = 'block';
+            } else {
+                alert('Error: Trabajador no encontrado');
+                window.location.href = '/trabajadores';
+            }
+        } catch (error) {
+            alert('Error al cargar el trabajador: ' + error.message);
+            window.location.href = '/trabajadores';
+        }
+    }
+
+    document.getElementById('formulario_editar').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            email: document.getElementById('email').value || null,
+            telefono: document.getElementById('telefono').value || null,
+            cargo: document.getElementById('cargo').value,
+            salario: parseFloat(document.getElementById('salario').value),
+            reference_id: document.getElementById('reference_id').value || null,
+            activo: document.getElementById('activo').value === 'true'
+        };
+
+        try {
+            const response = await fetch(`/api/trabajadores/${trabajadorId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const resultado = await response.json();
+
+            if (resultado.success) {
+                alert('Trabajador actualizado correctamente');
+                window.location.href = '/trabajadores';
+            } else {
+                alert('Error: ' + resultado.error);
+            }
+        } catch (error) {
+            alert('Error al actualizar trabajador: ' + error.message);
+        }
+    });
+
+    // Cargar trabajador al abrir la página
+    document.addEventListener('DOMContentLoaded', cargarTrabajador);
+</script>
+
+{% endblock %}

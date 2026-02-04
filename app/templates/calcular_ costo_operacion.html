@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a href="/calculos" class="btn back-btn">
+    <i style="margin-right: 8px;">←</i> Volver al menú
+</a>
+
+<h1>💰 Calculadora de Costos de Operación</h1>
+
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div id="cargando" style="text-align: center; color: #7f8c8d; font-size: 16px;">
+        <i style="margin-right: 8px;">⏳</i> Cargando trabajadores...
+    </div>
+
+    <form id="formulario_costo" action="/calcular-costo-operacion" method="post" style="display: none;">
+
+        <button type="submit" class="btn">
+            <i style="margin-right: 8px;">🧮</i> Calcular Costo de Operación
+        </button>
+    </form>
+
+    <div style="margin-top: 40px; padding: 25px; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 12px; border-left: 5px solid #0B1023;">
+        <h3 style="margin-top: 0; color: #2c3e50;">
+            <i style="margin-right: 8px;">📊</i> Gastos Fijos Incluidos:
+        </h3>
+        <div style="color: #555; font-size: 15px;">
+            <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+                <strong>📍 Arriendo diario:</strong> $25,000 COP (basado en $750,000 mensual)
+            </div>
+            <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+                <strong>🧵 Hilos:</strong> $10,000 COP
+            </div>
+            <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+                <strong>⚡ Luz:</strong> $5,000 COP
+            </div>
+            <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.7); border-radius: 6px;">
+                <strong>⚙️ Máquinas:</strong> $10,000 COP
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function cargarDatos() {
+    try {
+        const response = await fetch('/api/trabajadores');
+        const resultado = await response.json();
+        
+        if (resultado.success && resultado.data.length > 0) {
+            const trabajadores = resultado.data;
+            
+            // Buscar salarios
+            const operarias = trabajadores.filter(t => t.cargo.toLowerCase() === 'operaria');
+            const aprendices = trabajadores.filter(t => t.cargo.toLowerCase() === 'aprendiz');
+            
+            let salario_op = 56000;
+            let salario_ap = 30000;
+            
+            if (operarias.length > 0) {
+                salario_op = operarias[0].salario;
+            }
+            if (aprendices.length > 0) {
+                salario_ap = aprendices[0].salario;
+            }
+            
+            // Actualizar UI
+            document.getElementById('cargando').style.display = 'none';
+            document.getElementById('formulario_costo').style.display = 'block';
+            
+            document.getElementById('salario_operarias').textContent = 
+                `Salario diario: $${salario_op.toLocaleString('es-CO')} COP`;
+            document.getElementById('salario_prestaciones').textContent = 
+                `Salario diario: $${salario_op.toLocaleString('es-CO')} COP`;
+            document.getElementById('salario_aprendices').textContent = 
+                `Salario diario: $${salario_ap.toLocaleString('es-CO')} COP`;
+            
+        } else {
+            document.getElementById('cargando').innerHTML = `
+                <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); padding: 40px; border-radius: 12px; text-align: center; border-left: 5px solid #e74c3c;">
+                    <p style="color: #721c24; font-size: 16px; margin-bottom: 10px;">
+                        <i style="font-size: 32px; margin-right: 10px;">⚠️</i>
+                        <strong>No hay trabajadores registrados</strong>
+                    </p>
+                    <p style="color: #721c24; margin-bottom: 15px;">Por favor, agregue trabajadores primero</p>
+                    <a href="/agregar-trabajador" class="btn" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); text-decoration: none; display: inline-block; width: auto;">
+                        <i style="margin-right: 8px;">➕</i> Agregar Trabajador
+                    </a>
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('cargando').innerHTML = `
+            <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); padding: 40px; border-radius: 12px; text-align: center; border-left: 5px solid #e74c3c;">
+                <p style="color: #721c24; font-size: 16px;">Error: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Cargar datos al abrir la página
+document.addEventListener('DOMContentLoaded', cargarDatos);
+</script>
+{% endblock %}

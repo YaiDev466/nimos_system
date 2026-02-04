@@ -1,0 +1,11 @@
+fastapi
+jinja2
+python-multipart
+uvicorn
+pytz
+sqlalchemy
+python-dotenv
+cryptography
+reportlab
+weasyprint
+psycopg2-binary
