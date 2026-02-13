@@ -1,3 +1,19 @@
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🗑️ Confirmar Eliminación</h3>
+            <span class="close" onclick="closeModal('deleteConfirmModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="deleteConfirmText">¿Estás seguro de que deseas eliminar este grupo de entregas? Esta acción no se puede deshacer.</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="confirmDeleteBtn" class="btn btn-danger flex-grow-1">Sí, eliminar</button>
+                <button type="button" class="btn btn-secondary flex-grow-1" onclick="closeModal('deleteConfirmModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% extends "base.html" %}
 
 {% block content %}
@@ -1038,39 +1054,48 @@ async function viewDetailsGroup(idGroup) {
     }
 }
 
+let pendingDeleteGroupId = null;
 function deleteDeliveryGroup(idGroup) {
     const deliveriesInGroup = allDeliveries.filter(d => d.id_group === idGroup);
-    
-    if (!confirm(`¿Estás seguro de que deseas eliminar todas las ${deliveriesInGroup.length} entregas de este grupo? Esta acción no se puede deshacer.`)) {
-        return;
-    }
-    
-    // Obtener usuario actual
+    pendingDeleteGroupId = idGroup;
+    document.getElementById('deleteConfirmText').textContent = `¿Estás seguro de que deseas eliminar todas las ${deliveriesInGroup.length} entregas de este grupo? Esta acción no se puede deshacer.`;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+document.getElementById('confirmDeleteBtn').onclick = async function() {
+    if (!pendingDeleteGroupId) return;
+    const deliveriesInGroup = allDeliveries.filter(d => d.id_group === pendingDeleteGroupId);
     const currentUser = getCurrentUser();
-    
-    // Eliminar todas las entregas del grupo
     let deleteCount = 0;
-    
-    deliveriesInGroup.forEach(delivery => {
-        fetch(`/api/deliveries/${delivery.id_delivery}?modified_by=${encodeURIComponent(currentUser)}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
+    let errorOccurred = false;
+    for (const delivery of deliveriesInGroup) {
+        try {
+            const response = await fetch(`/api/deliveries/${delivery.id_delivery}?modified_by=${encodeURIComponent(currentUser)}`, {
+                method: 'DELETE'
+            });
             if (response.ok) {
                 deleteCount++;
-                if (deleteCount === deliveriesInGroup.length) {
-                    showAlert('✅ Grupo de entregas marcado como inactivo correctamente', 'success');
-                    setTimeout(() => {
-                        loadDeliveries();
-                    }, 1500);
-                }
+            } else {
+                errorOccurred = true;
             }
-        })
-        .catch(error => {
-            showAlert('Error: ' + error.message, 'error');
-        });
-    });
-}
+        } catch (error) {
+            errorOccurred = true;
+        }
+    }
+    closeModal('deleteConfirmModal');
+    if (deleteCount === deliveriesInGroup.length && !errorOccurred) {
+        showAlert('✅ Grupo de entregas marcado como inactivo correctamente', 'success');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1200);
+    } else {
+        showAlert('❌ Error al eliminar entregas. Intenta nuevamente.', 'error');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1200);
+    }
+    pendingDeleteGroupId = null;
+};
 
 function viewDetails(deliveryId) {
     const delivery = allDeliveries.find(d => d.id_delivery === deliveryId);

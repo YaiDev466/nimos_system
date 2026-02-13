@@ -58,8 +58,15 @@ async def update_delivery(delivery_id: int, delivery: DeliveredPiecesUpdate, db:
 
 @router.delete("/deliveries/{delivery_id}")
 async def delete_delivery(delivery_id: int, modified_by: str = None, db: Session = Depends(get_db)):
-    """Marcar una entrega como inactiva en lugar de eliminarla"""
-    success = DeliveryService.delete_delivery(db, delivery_id, modified_by)
-    if not success:
+    """Marcar como inactiva todas las entregas con el mismo id_group y fecha de entrega"""
+    # Buscar la entrega para obtener id_group y date
+    delivery = DeliveryService.get_delivery_by_id(db, delivery_id)
+    if not delivery:
         raise HTTPException(status_code=404, detail="Entrega no encontrada")
-    return {"message": "Entrega marcada como inactiva correctamente", "id_delivery": delivery_id}
+    id_group = delivery.id_group
+    date = delivery.date
+    # Marcar todas las entregas con el mismo id_group y fecha como inactivas
+    count = DeliveryService.delete_deliveries_by_group_and_date(db, id_group, date, modified_by)
+    if count == 0:
+        raise HTTPException(status_code=404, detail="No se encontraron entregas para marcar como inactivas")
+    return {"message": f"{count} entregas marcadas como inactivas correctamente", "id_group": id_group, "date": str(date)}
