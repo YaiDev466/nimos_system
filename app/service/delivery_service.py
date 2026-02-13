@@ -7,6 +7,24 @@ import pytz
 
 
 class DeliveryService:
+    @staticmethod
+    def delete_deliveries_by_group_and_date(db: Session, id_group: str, date, modified_by: str = None) -> int:
+        """Marcar como inactivas todas las entregas con el mismo id_group y fecha de entrega"""
+        # Buscar todas las entregas activas con el mismo id_group y fecha
+        deliveries = db.query(DeliveredPieces).filter(
+            DeliveredPieces.id_group == id_group,
+            DeliveredPieces.date == date,
+            DeliveredPieces.status == 'active'
+        ).all()
+        count = 0
+        for delivery in deliveries:
+            delivery.status = 'inactive'
+            delivery.modification_date = DeliveryService.get_bogota_time()
+            delivery.modified_by = modified_by or 'system'
+            count += 1
+        if count > 0:
+            db.commit()
+        return count
     # Zona horaria de Bogotá
     BOGOTA_TZ = pytz.timezone('America/Bogota')
     
